@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+</head>
+
 <body>
 
-<canvas id="myCanvas" width="1000" height="600" style="border:1px solid #000000;">
-Your browser does not support the HTML5 canvas tag.
-</canvas>
+<div id="container">
+</div>
 
 <script>
-    var fieldWidth = 50;
+    var fieldWidth = 54;
     var fieldHeight = 30;
     var numAnts = 16;
 
-    var canvas = document.getElementById("myCanvas");
-    var ctx = canvas.getContext("2d");
+    // Add a canvas, sized appropriately
+    var canvtag = '<canvas id="antField" width="'+(fieldWidth*20)+'" height="'+(fieldHeight*20)+'" style="border:1px solid #000000;">';
+    var canvas = $(canvtag);
+    $('#container').append(canvas);
+    var ctx = canvas.get(0).getContext("2d");
 
-    var ants = new Array(numAnts);
-    for (var i = 0; i < numAnts; i++) {
-        var antX = (Math.random() * fieldWidth) | 0;
-        var antY = (Math.random() * fieldHeight) | 0;
-        var direction = (Math.random() * 4) | 0;
-       
-        ants[i] = [antX, antY, direction];
-    }
-
+    // Create the ants and clear the scent field
+    var ants = createRandomAnts(numAnts);
     var scentField = emptyScentField();
 
     setInterval( function() {
@@ -34,6 +33,23 @@ Your browser does not support the HTML5 canvas tag.
 
     }, 100 );
 
+
+    function createRandomAnt() {
+        var antX = (Math.random() * fieldWidth) | 0;
+        var antY = (Math.random() * fieldHeight) | 0;
+        var direction = (Math.random() * 4) | 0;
+       
+        return [antX, antY, direction];
+    }
+
+    function createRandomAnts( numAnts ) {
+        var ants = [];
+
+        for (var i = 0; i < numAnts; i++)
+            ants.push(createRandomAnt());
+
+        return ants;
+    }
     
     function updateAnt( antData ) {
         var antX = antData[0];
