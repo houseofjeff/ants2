@@ -12,7 +12,7 @@
 <script>
     var fieldWidth = 54;
     var fieldHeight = 30;
-    var numAnts = 16;
+    var numAnts = 160;
 
     // Add a canvas, sized appropriately
     var canvtag = '<canvas id="antField" width="'+(fieldWidth*20)+'" height="'+(fieldHeight*20)+'" style="border:1px solid #000000;">';
@@ -31,7 +31,7 @@
         for (var i = 0; i < numAnts; i++) 
             ants[i] = updateAnt(ants[i]);
 
-    }, 100 );
+    }, 50 );
 
 
     function createRandomAnt() {
@@ -67,7 +67,7 @@
         if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
             direction = strongestScentDir
         else {
-            var changeDir = (Math.random() > 0.99) || (!canMove(projectedLocation(antData)));
+            var changeDir = (Math.random() > 0.92) || (!canMove(projectedLocation(antData)));
             if (changeDir) 
                 direction = Math.random() * 4 | 0;
         }
@@ -158,7 +158,19 @@
             for (var x = 0; x < fieldWidth; x++) {
                 ctx.fillStyle = field[y][x];
                 ctx.fillRect(x*20,y*20,20,20);
+
             }
+
+        for (var i = 0; i < numAnts; i++) {
+            var antX = ants[i][0];
+            var antY = ants[i][1];
+
+            ctx.beginPath();
+            ctx.arc((antX*20)+10, (antY*20)+10, 3, 0, 2 * Math.PI, false);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            
+        }
     }
 
 
@@ -182,12 +194,12 @@
             field[y] = new Array(fieldWidth);
 
             for (var x = 0; x < fieldWidth; x++) 
-                field[y][x] = Math.max(0, inField[y][x]-16);
+                field[y][x] = Math.max(0, inField[y][x]-4);
        }
        for (var i = 0; i < numAnts; i++) {
             var antX = ants[i][0];
             var antY = ants[i][1];
-            field[antY][antX] = Math.min(255, field[antY][antX]+128);
+            field[antY][antX] = Math.min(255, field[antY][antX]+85);
        }
  
        return field;
