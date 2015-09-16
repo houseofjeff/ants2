@@ -10,163 +10,71 @@
 </div>
 
 <script>
-    var fieldWidth = 54;
-    var fieldHeight = 30;
-    var numAnts = 160;
+var fieldWidth = 54;
+var fieldHeight = 30;
+var numAnts = 160;
 
-    // Add a canvas, sized appropriately
-    var canvtag = '<canvas id="antField" width="'+(fieldWidth*20)+'" height="'+(fieldHeight*20)+'" style="border:1px solid #000000;">';
-    var canvas = $(canvtag);
-    $('#container').append(canvas);
-    var ctx = canvas.get(0).getContext("2d");
+var changeDirProb = 0.1;   // The likelyhood that an ant will change direction
 
-    // Create the ants and clear the scent field
-    var ants = createRandomAnts(numAnts);
-    var scentField = emptyScentField();
+// Add a canvas, sized appropriately
+var canvtag = '<canvas id="antField" width="'+(fieldWidth*20)+'" height="'+(fieldHeight*20)+'" style="border:1px solid #000000;">';
+var canvas = $(canvtag);
+$('#container').append(canvas);
+var ctx = canvas.get(0).getContext("2d");
 
-    setInterval( function() {
-        scentField = scentStep(scentField);
-        updateCanvas( scentColor(scentField) );
+// Create the ants and clear the scent field
+var ants = createRandomAnts(numAnts);
+var scentField = new Field(fieldWidth, fieldHeight, function(x,y) { return 0 } ); //emptyScentField();
+var farm = new Farm( fieldWidth, fieldHeight );
 
-        for (var i = 0; i < numAnts; i++) 
-            ants[i] = updateAnt(ants[i]);
+setInterval( function() {
+    scentField = farm.scentStep(scentField);
+    farm.updateCanvas( farm.scentColor(scentField) );
 
-    }, 50 );
+    for (var i = 0; i < numAnts; i++) 
+        ants[i] = updateAnt(ants[i]);
+
+}, 50 );
 
 
-    function createRandomAnt() {
-        var antX = (Math.random() * fieldWidth) | 0;
-        var antY = (Math.random() * fieldHeight) | 0;
-        var direction = (Math.random() * 4) | 0;
-       
-        return [antX, antY, direction];
+//----------------------------------------------------------------------
+
+function Farm(width, height) {
+    this.width = width;
+    this.height = height;
+
+    this.validPosition = function(dest) {
+        return ((dest[0] >= 0) && (dest[1] >= 0) && (dest[0] < this.width) && (dest[1] < this.height));
     }
 
-    function createRandomAnts( numAnts ) {
-        var ants = [];
-
-        for (var i = 0; i < numAnts; i++)
-            ants.push(createRandomAnt());
-
-        return ants;
-    }
-   
-
-    opposites = [1, 0, 3, 2];
-
-    function oppositeDir( a, b ) {
-        return opposites[a] == b;    
-    }
-
-    function updateAnt( antData ) {
-        var antX = antData[0];
-        var antY = antData[1];
-        var direction = antData[2];
-
-        var strongestScentDir = findStrongestScentDirection(antData);
-        if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
-            direction = strongestScentDir
-        else {
-            var changeDir = (Math.random() > 0.92) || (!canMove(projectedLocation(antData)));
-            if (changeDir) 
-                direction = Math.random() * 4 | 0;
-        }
+    this.moveRelative = function(pos, direction) {
+        var antX = pos[0], antY = pos[1];
 
         if (direction == 0)
-            antX = Math.min( antX + 1, fieldWidth-1 );
+            var dest = [antX+1, antY]
         else if (direction == 1)
-            antX = Math.max( antX - 1, 0 );
+            var dest = [antX-1, antY];
         else if (direction == 2)
-            antY = Math.min( antY + 1, fieldHeight-1 );
+            var dest = [antX, antY+1];
         else if (direction == 3)
-            antY = Math.max( antY - 1, 0 );
+            var dest = [antX, antY-1];
 
-        return [antX, antY, direction];
+        return this.validPosition(dest) ? dest : null;
     }
 
-    function findStrongestScentDirection( antData ) {
-        var antX = antData[0];
-        var antY = antData[1];
-
-        var strongestDir = -1;
-        var strongestVal = 0;
-
-        // test to the right
-
-        var testStrength = scentStrength(antX+1, antY-1) + scentStrength(antX+1, antY) + scentStrength(antX+1, antY+1); 
-        if (testStrength > strongestVal) {
-            strongestVal = testStrength;
-            strongestDir = 0;
-        }
-
-        // test to the left
-        var testStrength = scentStrength(antX-1, antY-1) + scentStrength(antX-1, antY) + scentStrength(antX-1, antY+1); 
-        if (testStrength > strongestVal) {
-            strongestVal = testStrength;
-            strongestDir = 1;
-        }
-
-        // test to the down
-        var testStrength = scentStrength(antX-1, antY+1) + scentStrength(antX, antY+1) + scentStrength(antX+1, antY+1); 
-        if (testStrength > strongestVal) {
-            strongestVal = testStrength;
-            strongestDir = 2;
-        }
-
-        // test to the up
-        var testStrength = scentStrength(antX-1, antY-1) + scentStrength(antX, antY-1) + scentStrength(antX+1, antY-1); 
-        if (testStrength > strongestVal) {
-            strongestVal = testStrength;
-            strongestDir = 3;
-        }
-
-        return strongestDir;
-
-    }
-
-    function scentStrength( x, y ) {
-        if ((x >= 0) && (x < fieldWidth) && (y >=0) && (y < fieldHeight))
-           return scentField[y][x];
-        else
-           return 0;
-    }
-
-    function projectedLocation( antData ) {
-        var antX = antData[0];
-        var antY = antData[1];
-        var direction = antData[2];
-
-        if (direction == 0)
-            return [antX+1, antY]
-        else if (direction == 1)
-            return [antX-1, antY];
-        else if (direction == 2)
-            return [antX, antY+1];
-        else if (direction == 3)
-            return [antX, antY-1];
-    }
-
-    function canMove( antData ) {
-        var antX = antData[0];
-        var antY = antData[1];
-      
-        return ((antX >= 0) && (antX < fieldWidth) && (antY >= 0) && (antY < fieldHeight));
-    }
-
-    function updateCanvas(field) {
+    this.updateCanvas = function(field) {
         for (var y = 0; y < fieldHeight; y++)
             for (var x = 0; x < fieldWidth; x++) {
-                ctx.fillStyle = field[y][x];
+                ctx.fillStyle = field.field[y][x];
                 ctx.fillRect(x*20,y*20,20,20);
 
             }
 
         for (var i = 0; i < numAnts; i++) {
-            var antX = ants[i][0];
-            var antY = ants[i][1];
+            var antX = ants[i][0], antY = ants[i][1];
 
             ctx.beginPath();
-            ctx.arc((antX*20)+10, (antY*20)+10, 3, 0, 2 * Math.PI, false);
+            ctx.arc((antX*20)+10, (antY*20)+10, 5, 0, 2 * Math.PI, false);
             ctx.fillStyle = 'white';
             ctx.fill();
             
@@ -174,52 +82,203 @@
     }
 
 
-    function emptyScentField() {
-        var field = new Array(fieldHeight);
-        for (var y = 0; y < fieldHeight; y++) {
-            field[y] = new Array(fieldWidth);
+    this.scentStep = function(inField) {
+       var f = new Field(fieldWidth, fieldHeight, function(x,y) {
+           return Math.max(0, inField.field[y][x]-4);
+       } );
 
-            for (var x = 0; x < fieldWidth; x++) 
-                field[y][x] = 0;
-        }
-
-        return field;
-    }
-
-
-
-    function scentStep( inField ) {
-        var field = new Array(fieldHeight);
-        for (var y = 0; y < fieldHeight; y++) {
-            field[y] = new Array(fieldWidth);
-
-            for (var x = 0; x < fieldWidth; x++) 
-                field[y][x] = Math.max(0, inField[y][x]-4);
-       }
        for (var i = 0; i < numAnts; i++) {
-            var antX = ants[i][0];
-            var antY = ants[i][1];
-            field[antY][antX] = Math.min(255, field[antY][antX]+85);
+            var antX = ants[i][0], antY = ants[i][1];
+            f.field[antY][antX] = Math.min(255, f.field[antY][antX]+85);
        }
- 
-       return field;
+
+       return f;
          
     }
 
-
-    function scentColor(inField) {
-        
-        var field = new Array(fieldHeight);
-        for (var y = 0; y < fieldHeight; y++) {
-            field[y] = new Array(fieldWidth);
-
-            for (var x = 0; x < fieldWidth; x++) {
-                field[y][x] = "rgb("+inField[y][x]+","+0+","+0+")";
-            }
-        }
-
-        return field;
+    this.scentStrength = function( x, y ) {
+        if ((x >= 0) && (x < fieldWidth) && (y >=0) && (y < fieldHeight))
+           return scentField.field[y][x];
+        else
+           return 0;
     }
+
+
+
+
+    this.scentColor = function(inField) {
+        return new Field(fieldWidth, fieldHeight, function(x,y) {
+            return "rgb("+inField.field[y][x]+","+0+","+0+")";
+        } );
+    }
+
+
+}
+
+
+Farm.prototype.oppositeDirection = function( dirA, dirB ) {
+    var opposites = [1, 0, 3, 2];
+    return opposites[dirA] == dirB;    
+}
+
+
+
+//----------------------------------------------------------------------
+// 'Field' is a 2-dimensional array
+
+function Field(width, height, calcfunc) {
+    this.width = width;
+    this.height = height;
+
+    this.field = new Array(height);
+    for (var y = 0; y < height; y++) {
+        this.field[y] = new Array(width);
+
+        for (var x = 0; x < width; x++) 
+            this.field[y][x] = calcfunc(x,y);
+   }
+}
+
+
+//----------------------------------------------------------------------
+
+function Ant() {
+    this.antX = (Math.random() * fieldWidth) | 0;
+    this.antY = (Math.random() * fieldHeight) | 0;
+    this.direction = (Math.random() * 4) | 0;
+}
+
+
+Ant.prototype.oppositeDir = function( a, b ) {
+    var opposites = [1, 0, 3, 2];
+    return opposites[a] == b;    
+}
+
+
+Ant.prototype.step = function () {
+    var antX = antData[0];
+    var antY = antData[1];
+    var direction = antData[2];
+
+    var newPos = farm.moveRelative(antData, direction);
+
+    var strongestScentDir = findStrongestScentDirection(antData);
+    if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
+        direction = strongestScentDir
+    else {
+        var changeDir = ((Math.random() <= changeDirProb) || (newPos == null));  //(!canMove(projectedLocation(antData)));
+        if (changeDir) 
+            direction = Math.random() * 4 | 0;
+    }
+
+    if (direction == 0)
+        antX = Math.min( antX + 1, fieldWidth-1 );
+    else if (direction == 1)
+        antX = Math.max( antX - 1, 0 );
+    else if (direction == 2)
+        antY = Math.min( antY + 1, fieldHeight-1 );
+    else if (direction == 3)
+        antY = Math.max( antY - 1, 0 );
+
+    return [antX, antY, direction];
+}
+
+Ant.prototype.findStrongestScentDirection = function () {
+}
+
+//----------------------------------------------------------------------
+
+function createRandomAnt() {
+    var antX = (Math.random() * fieldWidth) | 0;
+    var antY = (Math.random() * fieldHeight) | 0;
+    var direction = (Math.random() * 4) | 0;
+   
+    return [antX, antY, direction];
+}
+
+function createRandomAnts( numAnts ) {
+    var ants = [];
+
+    for (var i = 0; i < numAnts; i++)
+        ants.push(createRandomAnt());
+
+    return ants;
+}
+
+
+
+function oppositeDir( a, b ) {
+    var opposites = [1, 0, 3, 2];
+    return opposites[a] == b;    
+}
+
+function updateAnt( antData ) {
+    var antX = antData[0];
+    var antY = antData[1];
+    var direction = antData[2];
+
+    var newPos = farm.moveRelative(antData, direction);
+
+    var strongestScentDir = findStrongestScentDirection(antData);
+    if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
+        direction = strongestScentDir
+    else {
+        var changeDir = ((Math.random() <= changeDirProb) || (newPos == null)); // (!canMove(projectedLocation(antData))));
+        if (changeDir) 
+            direction = Math.random() * 4 | 0;
+    }
+
+    if (direction == 0)
+        antX = Math.min( antX + 1, fieldWidth-1 );
+    else if (direction == 1)
+        antX = Math.max( antX - 1, 0 );
+    else if (direction == 2)
+        antY = Math.min( antY + 1, fieldHeight-1 );
+    else if (direction == 3)
+        antY = Math.max( antY - 1, 0 );
+
+    return [antX, antY, direction];
+}
+
+function findStrongestScentDirection( antData ) {
+    var antX = antData[0];
+    var antY = antData[1];
+
+    var strongestDir = -1;
+    var strongestVal = 0;
+
+    // test to the right
+
+    var testStrength = farm.scentStrength(antX+1, antY-1) + farm.scentStrength(antX+1, antY) + farm.scentStrength(antX+1, antY+1); 
+    if (testStrength > strongestVal) {
+        strongestVal = testStrength;
+        strongestDir = 0;
+    }
+
+    // test to the left
+    var testStrength = farm.scentStrength(antX-1, antY-1) + farm.scentStrength(antX-1, antY) + farm.scentStrength(antX-1, antY+1); 
+    if (testStrength > strongestVal) {
+        strongestVal = testStrength;
+        strongestDir = 1;
+    }
+
+    // test to the down
+    var testStrength = farm.scentStrength(antX-1, antY+1) + farm.scentStrength(antX, antY+1) + farm.scentStrength(antX+1, antY+1); 
+    if (testStrength > strongestVal) {
+        strongestVal = testStrength;
+        strongestDir = 2;
+    }
+
+    // test to the up
+    var testStrength = farm.scentStrength(antX-1, antY-1) + farm.scentStrength(antX, antY-1) + farm.scentStrength(antX+1, antY-1); 
+    if (testStrength > strongestVal) {
+        strongestVal = testStrength;
+        strongestDir = 3;
+    }
+
+    return strongestDir;
+
+}
 
 
 </script>
