@@ -24,8 +24,8 @@ var ctx = canvas.get(0).getContext("2d");
 
 // Create the ants and clear the scent field
 var ants = createRandomAnts(numAnts);
-var scentField = new Field(fieldWidth, fieldHeight, function(x,y) { return 0 } ); //emptyScentField();
-var farm = new Farm( fieldWidth, fieldHeight );
+var scentField = new Field(fieldWidth, fieldHeight, function(x,y) { return 0 } ); 
+var farm = new Farm( fieldWidth, fieldHeight, numAnts );
 
 setInterval( function() {
     scentField = farm.scentStep(scentField);
@@ -39,9 +39,15 @@ setInterval( function() {
 
 //----------------------------------------------------------------------
 
-function Farm(width, height) {
+function Farm(width, height, numAnts) {
     this.width = width;
     this.height = height;
+    this.numAnts = numAnts;
+    this.ants = [];
+   
+    for (var i = 0; i < numAnts; i++)
+        this.ants = new Ant(this);
+
 
     this.validPosition = function(dest) {
         return ((dest[0] >= 0) && (dest[1] >= 0) && (dest[0] < this.width) && (dest[1] < this.height));
@@ -112,6 +118,45 @@ function Farm(width, height) {
         } );
     }
 
+    this.findStrongestScentDirection = function (loc) {
+        var antX = loc[0];
+        var antY = loc[1];
+
+        var strongestDir = -1;
+        var strongestVal = 0;
+
+        // test to the right
+
+        var testStrength = farm.scentStrength(antX+1, antY-1) + farm.scentStrength(antX+1, antY) + farm.scentStrength(antX+1, antY+1); 
+        if (testStrength > strongestVal) {
+            strongestVal = testStrength;
+            strongestDir = 0;
+        }
+
+        // test to the left
+        var testStrength = farm.scentStrength(antX-1, antY-1) + farm.scentStrength(antX-1, antY) + farm.scentStrength(antX-1, antY+1); 
+        if (testStrength > strongestVal) {
+            strongestVal = testStrength;
+            strongestDir = 1;
+        }
+
+        // test to the down
+        var testStrength = farm.scentStrength(antX-1, antY+1) + farm.scentStrength(antX, antY+1) + farm.scentStrength(antX+1, antY+1); 
+        if (testStrength > strongestVal) {
+            strongestVal = testStrength;
+            strongestDir = 2;
+        }
+
+        // test to the up
+        var testStrength = farm.scentStrength(antX-1, antY-1) + farm.scentStrength(antX, antY-1) + farm.scentStrength(antX+1, antY-1); 
+        if (testStrength > strongestVal) {
+            strongestVal = testStrength;
+            strongestDir = 3;
+        }
+
+        return strongestDir;
+
+    }
 
 }
 
@@ -142,10 +187,11 @@ function Field(width, height, calcfunc) {
 
 //----------------------------------------------------------------------
 
-function Ant() {
+function Ant(farm) {
     this.antX = (Math.random() * fieldWidth) | 0;
     this.antY = (Math.random() * fieldHeight) | 0;
     this.direction = (Math.random() * 4) | 0;
+    this.farm = farm;
 }
 
 
@@ -160,9 +206,10 @@ Ant.prototype.step = function () {
     var antY = antData[1];
     var direction = antData[2];
 
-    var newPos = farm.moveRelative(antData, direction);
 
-    var strongestScentDir = findStrongestScentDirection(antData);
+    var newPos = this.farm.moveRelative(antData, direction);
+
+    var strongestScentDir = farm.findStrongestScentDirection(antData);
     if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
         direction = strongestScentDir
     else {
@@ -183,8 +230,6 @@ Ant.prototype.step = function () {
     return [antX, antY, direction];
 }
 
-Ant.prototype.findStrongestScentDirection = function () {
-}
 
 //----------------------------------------------------------------------
 
@@ -219,7 +264,7 @@ function updateAnt( antData ) {
 
     var newPos = farm.moveRelative(antData, direction);
 
-    var strongestScentDir = findStrongestScentDirection(antData);
+    var strongestScentDir = farm.findStrongestScentDirection(antData);
     if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
         direction = strongestScentDir
     else {
@@ -240,45 +285,6 @@ function updateAnt( antData ) {
     return [antX, antY, direction];
 }
 
-function findStrongestScentDirection( antData ) {
-    var antX = antData[0];
-    var antY = antData[1];
-
-    var strongestDir = -1;
-    var strongestVal = 0;
-
-    // test to the right
-
-    var testStrength = farm.scentStrength(antX+1, antY-1) + farm.scentStrength(antX+1, antY) + farm.scentStrength(antX+1, antY+1); 
-    if (testStrength > strongestVal) {
-        strongestVal = testStrength;
-        strongestDir = 0;
-    }
-
-    // test to the left
-    var testStrength = farm.scentStrength(antX-1, antY-1) + farm.scentStrength(antX-1, antY) + farm.scentStrength(antX-1, antY+1); 
-    if (testStrength > strongestVal) {
-        strongestVal = testStrength;
-        strongestDir = 1;
-    }
-
-    // test to the down
-    var testStrength = farm.scentStrength(antX-1, antY+1) + farm.scentStrength(antX, antY+1) + farm.scentStrength(antX+1, antY+1); 
-    if (testStrength > strongestVal) {
-        strongestVal = testStrength;
-        strongestDir = 2;
-    }
-
-    // test to the up
-    var testStrength = farm.scentStrength(antX-1, antY-1) + farm.scentStrength(antX, antY-1) + farm.scentStrength(antX+1, antY-1); 
-    if (testStrength > strongestVal) {
-        strongestVal = testStrength;
-        strongestDir = 3;
-    }
-
-    return strongestDir;
-
-}
 
 
 </script>
