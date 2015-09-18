@@ -27,8 +27,7 @@ var ants = createRandomAnts(numAnts);
 var farm = new Farm( fieldWidth, fieldHeight, numAnts );
 
 setInterval( function() {
-    farm.scentField = farm.scentStep(farm.scentField);
-    farm.updateCanvas( farm.scentColor(farm.scentField) );
+    farm.step();
 
     for (var i = 0; i < numAnts; i++) 
         ants[i] = updateAnt(ants[i]);
@@ -43,7 +42,7 @@ function Farm(width, height, numAnts) {
     this.height = height;
     this.numAnts = numAnts;
     this.ants = [];
-    this.scentField = new Field(fieldWidth, fieldHeight, function(x,y) { return 0 } ); 
+    this.scentField = new Field(width, height, function(x,y) { return 0 } ); 
    
     for (var i = 0; i < numAnts; i++)
         this.ants = new Ant(this);
@@ -68,9 +67,15 @@ function Farm(width, height, numAnts) {
         return this.validPosition(dest) ? dest : null;
     }
 
+    this.step = function() {
+        this.updateCanvas( this.scentColor(this.scentField) );
+    }
+
+
     this.updateCanvas = function(field) {
-        for (var y = 0; y < fieldHeight; y++)
-            for (var x = 0; x < fieldWidth; x++) {
+        this.scentField = this.scentStep(this.scentField);
+        for (var y = 0; y < this.height; y++)
+            for (var x = 0; x < this.width; x++) {
                 ctx.fillStyle = field.field[y][x];
                 ctx.fillRect(x*20,y*20,20,20);
 
@@ -89,7 +94,7 @@ function Farm(width, height, numAnts) {
 
 
     this.scentStep = function(inField) {
-       var f = new Field(fieldWidth, fieldHeight, function(x,y) {
+       var f = new Field(this.width, this.height, function(x,y) {
            return Math.max(0, inField.field[y][x]-4);
        } );
 
@@ -103,7 +108,7 @@ function Farm(width, height, numAnts) {
     }
 
     this.scentStrength = function( x, y ) {
-        if ((x >= 0) && (x < fieldWidth) && (y >=0) && (y < fieldHeight))
+        if ((x >= 0) && (x < this.width) && (y >=0) && (y < this.height))
            return this.scentField.field[y][x];
         else
            return 0;
@@ -113,7 +118,7 @@ function Farm(width, height, numAnts) {
 
 
     this.scentColor = function(inField) {
-        return new Field(fieldWidth, fieldHeight, function(x,y) {
+        return new Field(this.width, this.height, function(x,y) {
             return "rgb("+inField.field[y][x]+","+0+","+0+")";
         } );
     }
