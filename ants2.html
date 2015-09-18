@@ -24,12 +24,11 @@ var ctx = canvas.get(0).getContext("2d");
 
 // Create the ants and clear the scent field
 var ants = createRandomAnts(numAnts);
-var scentField = new Field(fieldWidth, fieldHeight, function(x,y) { return 0 } ); 
 var farm = new Farm( fieldWidth, fieldHeight, numAnts );
 
 setInterval( function() {
-    scentField = farm.scentStep(scentField);
-    farm.updateCanvas( farm.scentColor(scentField) );
+    farm.scentField = farm.scentStep(farm.scentField);
+    farm.updateCanvas( farm.scentColor(farm.scentField) );
 
     for (var i = 0; i < numAnts; i++) 
         ants[i] = updateAnt(ants[i]);
@@ -44,6 +43,7 @@ function Farm(width, height, numAnts) {
     this.height = height;
     this.numAnts = numAnts;
     this.ants = [];
+    this.scentField = new Field(fieldWidth, fieldHeight, function(x,y) { return 0 } ); 
    
     for (var i = 0; i < numAnts; i++)
         this.ants = new Ant(this);
@@ -104,7 +104,7 @@ function Farm(width, height, numAnts) {
 
     this.scentStrength = function( x, y ) {
         if ((x >= 0) && (x < fieldWidth) && (y >=0) && (y < fieldHeight))
-           return scentField.field[y][x];
+           return this.scentField.field[y][x];
         else
            return 0;
     }
