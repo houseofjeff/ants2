@@ -12,7 +12,6 @@
 <script>
 var fieldWidth = 54;
 var fieldHeight = 30;
-var numAnts = 160;
 
 var changeDirProb = 0.1;   // The likelyhood that an ant will change direction
 
@@ -23,15 +22,10 @@ $('#container').append(canvas);
 var ctx = canvas.get(0).getContext("2d");
 
 // Create the ants and clear the scent field
-var ants = createRandomAnts(numAnts);
-var farm = new Farm( fieldWidth, fieldHeight, numAnts );
+var farm = new Farm( fieldWidth, fieldHeight, 160 );
 
 setInterval( function() {
     farm.step();
-
-    for (var i = 0; i < numAnts; i++) 
-        ants[i] = updateAnt(ants[i]);
-
 }, 50 );
 
 
@@ -45,7 +39,7 @@ function Farm(width, height, numAnts) {
     this.scentField = new Field(width, height, function(x,y) { return 0 } ); 
    
     for (var i = 0; i < numAnts; i++)
-        this.ants = new Ant(this);
+        this.ants[i] = new Ant(this);
 
 
     this.validPosition = function(dest) {
@@ -68,6 +62,9 @@ function Farm(width, height, numAnts) {
     }
 
     this.step = function() {
+        for (var i=0; i < this.ants.length; i++)
+            this.ants[i].step();
+
         this.updateCanvas( this.scentColor(this.scentField) );
     }
 
@@ -81,8 +78,8 @@ function Farm(width, height, numAnts) {
 
             }
 
-        for (var i = 0; i < numAnts; i++) {
-            var antX = ants[i][0], antY = ants[i][1];
+        for (var i = 0; i < this.ants.length; i++) {
+            var antX = this.ants[i].antX, antY = this.ants[i].antY;
 
             ctx.beginPath();
             ctx.arc((antX*20)+10, (antY*20)+10, 5, 0, 2 * Math.PI, false);
@@ -98,8 +95,8 @@ function Farm(width, height, numAnts) {
            return Math.max(0, inField.field[y][x]-4);
        } );
 
-       for (var i = 0; i < numAnts; i++) {
-            var antX = ants[i][0], antY = ants[i][1];
+       for (var i = 0; i < this.ants.length; i++) {
+            var antX = this.ants[i].antX, antY = this.ants[i].antY;
             f.field[antY][antX] = Math.min(255, f.field[antY][antX]+85);
        }
 
@@ -113,8 +110,6 @@ function Farm(width, height, numAnts) {
         else
            return 0;
     }
-
-
 
 
     this.scentColor = function(inField) {
@@ -207,90 +202,27 @@ Ant.prototype.oppositeDir = function( a, b ) {
 
 
 Ant.prototype.step = function () {
-    var antX = antData[0];
-    var antY = antData[1];
-    var direction = antData[2];
-
-
-    var newPos = this.farm.moveRelative(antData, direction);
+    var antData = [this.antX, this.antY, this.direction]
+    var newPos = this.farm.moveRelative( antData, this.direction ); 
 
     var strongestScentDir = farm.findStrongestScentDirection(antData);
-    if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
-        direction = strongestScentDir
+    if ((strongestScentDir != -1) && (!this.oppositeDir(this.direction, strongestScentDir)))
+        this.direction = strongestScentDir
     else {
         var changeDir = ((Math.random() <= changeDirProb) || (newPos == null));  //(!canMove(projectedLocation(antData)));
         if (changeDir) 
-            direction = Math.random() * 4 | 0;
+            this.direction = Math.random() * 4 | 0;
     }
 
-    if (direction == 0)
-        antX = Math.min( antX + 1, fieldWidth-1 );
-    else if (direction == 1)
-        antX = Math.max( antX - 1, 0 );
-    else if (direction == 2)
-        antY = Math.min( antY + 1, fieldHeight-1 );
-    else if (direction == 3)
-        antY = Math.max( antY - 1, 0 );
-
-    return [antX, antY, direction];
+    if (this.direction == 0)
+        this.antX = Math.min( this.antX + 1, fieldWidth-1 );
+    else if (this.direction == 1)
+        this.antX = Math.max( this.antX - 1, 0 );
+    else if (this.direction == 2)
+        this.antY = Math.min( this.antY + 1, fieldHeight-1 );
+    else if (this.direction == 3)
+        this.antY = Math.max( this.antY - 1, 0 );
 }
-
-
-//----------------------------------------------------------------------
-
-function createRandomAnt() {
-    var antX = (Math.random() * fieldWidth) | 0;
-    var antY = (Math.random() * fieldHeight) | 0;
-    var direction = (Math.random() * 4) | 0;
-   
-    return [antX, antY, direction];
-}
-
-function createRandomAnts( numAnts ) {
-    var ants = [];
-
-    for (var i = 0; i < numAnts; i++)
-        ants.push(createRandomAnt());
-
-    return ants;
-}
-
-
-
-function oppositeDir( a, b ) {
-    var opposites = [1, 0, 3, 2];
-    return opposites[a] == b;    
-}
-
-function updateAnt( antData ) {
-    var antX = antData[0];
-    var antY = antData[1];
-    var direction = antData[2];
-
-    var newPos = farm.moveRelative(antData, direction);
-
-    var strongestScentDir = farm.findStrongestScentDirection(antData);
-    if ((strongestScentDir != -1) && (!oppositeDir(direction, strongestScentDir)))
-        direction = strongestScentDir
-    else {
-        var changeDir = ((Math.random() <= changeDirProb) || (newPos == null)); // (!canMove(projectedLocation(antData))));
-        if (changeDir) 
-            direction = Math.random() * 4 | 0;
-    }
-
-    if (direction == 0)
-        antX = Math.min( antX + 1, fieldWidth-1 );
-    else if (direction == 1)
-        antX = Math.max( antX - 1, 0 );
-    else if (direction == 2)
-        antY = Math.min( antY + 1, fieldHeight-1 );
-    else if (direction == 3)
-        antY = Math.max( antY - 1, 0 );
-
-    return [antX, antY, direction];
-}
-
-
 
 </script>
 
