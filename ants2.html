@@ -3,16 +3,56 @@
 <head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular.min.js"></script>
-<script>
+<link href='https://fonts.googleapis.com/css?family=Asap:400,700' rel='stylesheet' type='text/css'>
+<style>
+body {
+    background-color: black;
+    color: white;
+    font-family: Asap, Helvetica, Arial;
+}
 
-</script>
+.container {
+
+}
+
+.leftpane {
+    float:left;
+    width:250px;
+}
+
+.title {
+    font-size:20px;
+    line-height:130%;
+    font-weight:700;
+}
+
+.panetext {
+    line-height:150%;
+}
+
+.field {
+    float:right;
+}
+
+.control {
+    text-align: center;
+    margin-bottom:10px;
+}
+</style>
 </head>
 
 <body ng-controller="AntsAppCtrl">
 
-<div id="container">
+<div class="container">
+<div class="leftpane">
+<div class="panetext">
+<span class='title'>Emergent patterns with scent following 'Ants'</span><p>
+These 'ants' obey a very simple set of rules -- following the strongest scent they come across, with a little (or a lot) of randomness thrown in.   Any patterns you see emerge from those simple rules.   Cool, huh?
 </div>
-
+<br />
+<hr style="margin-left:20px; margin-right:20px;" />
+<br/>
+<div class="control">
 <label>Ant Randomness: <select name="singleSelect" ng-model="changeProb" ng-init="changeProb='0.1'">
     <option value="0.1">10%</option>
     <option value="0.2">20%</option>
@@ -25,17 +65,22 @@
     <option value="0.9">90%</option>
 </select>
 </label>
+</div>
 
-<label style="margin-left:30px;">Show Ants:
+<div class="control">
+<label>Show Ants:
     <input type="checkbox" ng-model="drawAnts" ng-checked="drawAnts">
 </label>
+</div>
 
-<label style="margin-left:30px;">Show Trails:
+<div class="control">
+<label>Show Trails:
     <input type="checkbox" ng-model="drawTrails" value="true">
 </label>
+</div>
 
-
-<label style="margin-left:30px;">
+<div class="control">
+<label>
     Trail length: <select name="decay" ng-model="trailDecay" ng-init="trailDecay='8'">
         <option value="16">Very short</option>
         <option value="8">Short</option>
@@ -43,14 +88,21 @@
         <option value="2">Long</option>
     </select>
 </label>
-
+</div>
+<br />
+<hr style="margin-left:20px; margin-right:20px;" />
+<br/>
+</div>
+<div id="field">
+</div>
+</div>
 <script>
     var fieldWidth = 54;
     var fieldHeight = 30;
     // Add a canvas, sized appropriately
     var canvtag = '<canvas id="antField" width="'+(fieldWidth*20)+'" height="'+(fieldHeight*20)+'" style="border:1px solid #000000;">';
     var canvas = $(canvtag);
-    $('#container').append(canvas);
+    $('#field').append(canvas);
     var ctx = canvas.get(0).getContext("2d");
 
 var antsApp = angular.module("antsApp", []);
