@@ -89,6 +89,13 @@ These 'ants' obey a very simple set of rules -- following the strongest scent th
     </select>
 </label>
 </div>
+
+<div class="control">
+<label>Lightswitch rave: 
+    <input type="checkbox" ng-model="psychedelic" value="false">
+</label>
+</div>
+
 <br />
 <hr style="margin-left:20px; margin-right:20px;" />
 <br/>
@@ -97,6 +104,7 @@ These 'ants' obey a very simple set of rules -- following the strongest scent th
 </div>
 </div>
 <script>
+
     var fieldWidth = 54;
     var fieldHeight = 30;
     // Add a canvas, sized appropriately
@@ -104,6 +112,11 @@ These 'ants' obey a very simple set of rules -- following the strongest scent th
     var canvas = $(canvtag);
     $('#field').append(canvas);
     var ctx = canvas.get(0).getContext("2d");
+    var _baseColor = [0,255, 0];
+    var _targetColor = [255, 0, 0];
+    var _stepColor;
+    var _stepNum = 0;
+
 
 var antsApp = angular.module("antsApp", []);
 
@@ -169,6 +182,25 @@ function Farm(width, height, numAnts, $scope) {
     //  Advance the farm simulation one step, redraw the canvas
 
     this.step = function($scope) {
+        if ($scope.psychedelic) {
+            if (_stepNum % 10 == 0) {
+                _baseColor = _targetColor;
+                _targetColor = [ Math.round(Math.random()*255), Math.round(Math.random()*255), Math.round(Math.random()*255) ];
+                _stepColor = _baseColor;
+            }
+            else {
+                var newR = Math.round(((_targetColor[0]-_baseColor[0])/10)*(_stepNum % 10))+_baseColor[0];
+                var newG = Math.round(((_targetColor[1]-_baseColor[1])/10)*(_stepNum % 10))+_baseColor[1];
+                var newB = Math.round(((_targetColor[2]-_baseColor[2])/10)*(_stepNum % 10))+_baseColor[2];
+
+                _stepColor = [newR, newG, newB];
+            }
+        }
+        else
+            _stepColor = [255,0,0];
+            
+        _stepNum += 1;
+
         // Update the state and position of the ants
         for (var i=0; i < this.ants.length; i++)
             this.ants[i].step($scope);
@@ -234,7 +266,11 @@ function Farm(width, height, numAnts, $scope) {
 
     this.scentColor = function(inField) {
         return new Field(this.width, this.height, function(x,y) {
-            return "rgb("+inField.field[y][x]+","+0+","+0+")";
+            var newR = Math.round(_stepColor[0]*( inField.field[y][x]/256));
+            var newG = Math.round(_stepColor[1]*( inField.field[y][x]/256));
+            var newB = Math.round(_stepColor[2]*( inField.field[y][x]/256));
+
+            return "rgb("+newR+","+newG+","+newB+")";
         } );
     }
 
