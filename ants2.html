@@ -68,7 +68,9 @@ These 'ants' obey a very simple set of rules -- following the strongest scent th
 </div>
 
 <div class="control">
-<label>Number of ants: <select name="singleSelect" ng-model="numAnts" ng-init="numAnts='200'" ng-change="ChangeAntCount()">
+Number of ants: <span ng-bind="numAnts"></span><br />
+<label>
+Target: <select name="singleSelect" ng-model="targetAnts" ng-init="targetAnts='200'" ng-change="ChangeAntTarget()">
     <option value="1">1 lonely ant</option>
     <option value="10">10 ants</option>
     <option value="50">50 ants</option>
@@ -142,8 +144,8 @@ antsApp.controller('AntsAppCtrl', function ($scope) {
     var farm = new Farm( 900, 600, 45, 30, 200, $scope );
 
 
-    $scope.ChangeAntCount = function() {
-        farm.changeAntCount($scope.numAnts);
+    $scope.ChangeAntTarget = function() {
+        farm.changeAntTarget($scope.targetAnts);
     }
 
     setInterval( function() {
@@ -168,23 +170,13 @@ function Farm( pixelWidth, pixelHeight, cellCountX, cellCountY, numAnts, $scope)
     this.scentField = new Field( cellCountX, cellCountY, function(x,y) { return 0 } ); 
 
     // Create a set of random ants
-    this.numAnts = numAnts;
+    this.targetAnts = numAnts;
+    $scope.numAnts = 0;
     this.ants = [];
-    for (var i = 0; i < numAnts; i++)
-        this.ants[i] = new Ant(this, $scope);
 
 
-    this.changeAntCount = function (newNum) {
-        console.log("Changing to ", newNum);
-        if (newNum < this.ants.length) {
-            while (this.ants.length > newNum)
-                this.ants.pop();
-        }
-        else if (newNum > this.ants.length) {
-            while (this.ants.length < newNum)
-                this.ants.push( new Ant(this, $scope) );
-        }
-
+    this.changeAntTarget = function (newNum) {
+        this.targetAnts = newNum;
     }
 
     //------------------------------------------------------------------------
@@ -238,6 +230,28 @@ function Farm( pixelWidth, pixelHeight, cellCountX, cellCountY, numAnts, $scope)
             _stepColor = [255,0,0];
             
         _stepNum += 1;
+
+        // Move toward the target number of ants.
+        var diffCount = Math.round(Math.log(Math.abs(this.targetAnts-this.ants.length)));
+        if (diffCount == 0)
+            diffCount = Math.abs(this.targetAnts-this.ants.length);
+        
+        if (this.targetAnts < this.ants.length) {
+            for (var i = 0; i < diffCount; i++)
+                this.ants.pop();
+        }
+        else if (this.targetAnts > this.ants.length) {
+            for (var i = 0; i < diffCount; i++)
+                this.ants.push( new Ant(this, $scope) );
+        }
+
+        var currentAntCount = this.ants.length;
+
+        $scope.$apply( function() {
+            $scope.numAnts = currentAntCount;
+        } );
+
+        console.log( $scope.numAnts );
 
         // Update the state and position of the ants
         for (var i=0; i < this.ants.length; i++)
