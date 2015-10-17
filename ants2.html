@@ -68,6 +68,19 @@ These 'ants' obey a very simple set of rules -- following the strongest scent th
 </div>
 
 <div class="control">
+<label>Number of ants: <select name="singleSelect" ng-model="numAnts" ng-init="numAnts='200'" ng-change="ChangeAntCount()">
+    <option value="1">1 lonely ant</option>
+    <option value="10">10 ants</option>
+    <option value="50">50 ants</option>
+    <option value="100">100 ants</option>
+    <option value="200">200 ants</option>
+    <option value="500">500 ants</option>
+    <option value="1000">One Thousand Ants</option>
+</select>
+</label>
+</div>
+
+<div class="control">
 <label>Show Ants:
     <input type="checkbox" ng-model="drawAnts" ng-checked="drawAnts">
 </label>
@@ -121,11 +134,17 @@ These 'ants' obey a very simple set of rules -- following the strongest scent th
 var antsApp = angular.module("antsApp", []);
 
 antsApp.controller('AntsAppCtrl', function ($scope) {
-    // Create the ants and clear the scent field
-    var farm = new Farm( 900, 600, 45, 30, 160, $scope );
-
     $scope.drawAnts = true;
     $scope.drawTrails = true;
+    console.log($scope);
+
+    // Create the ants and clear the scent field
+    var farm = new Farm( 900, 600, 45, 30, 200, $scope );
+
+
+    $scope.ChangeAntCount = function() {
+        farm.changeAntCount($scope.numAnts);
+    }
 
     setInterval( function() {
         farm.step($scope);
@@ -154,6 +173,19 @@ function Farm( pixelWidth, pixelHeight, cellCountX, cellCountY, numAnts, $scope)
     for (var i = 0; i < numAnts; i++)
         this.ants[i] = new Ant(this, $scope);
 
+
+    this.changeAntCount = function (newNum) {
+        console.log("Changing to ", newNum);
+        if (newNum < this.ants.length) {
+            while (this.ants.length > newNum)
+                this.ants.pop();
+        }
+        else if (newNum > this.ants.length) {
+            while (this.ants.length < newNum)
+                this.ants.push( new Ant(this, $scope) );
+        }
+
+    }
 
     //------------------------------------------------------------------------
     // Returns true if the specified position is valid (within the field)
